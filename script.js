@@ -5,12 +5,31 @@ import * as THREE from 'three';
 var scene;
 var renderer;
 var camera;
-var baseArbre;
+var isPaused = true;
 
-baseArbre = new THREE.Group();
+// Groupes
+var group_pere = new THREE.Group();
+// groupe fils de la scène
+var baseArbre = new THREE.Group();
+var sky_base = new THREE.Group();
+
+// ajout des groupes fils au groupe père
+group_pere.add(baseArbre);
+group_pere.add(sky_base);
 
 // Variables d'animation
 var rotationSpeed = 0.005;
+
+// gestion du clavier
+
+function logKey(e) {
+    if (e = "p")
+        isPaused = !isPaused;
+}
+
+// ---------------- GEOMETRIES ----------------
+const cube_Geometry = new THREE.BoxGeometry(5, 5, 5);
+
 
 function start() {
     scene = new THREE.Scene();
@@ -37,8 +56,11 @@ function start() {
     scene.add(directionalLight);
 
     // ---------------- OBJECTS ----------------
-    ajout_Arbre(0, -30);
-    scene.add(baseArbre);
+    ajout_Arbre(0, -10);
+    ajout_skyBase();
+    ajout_ciel();
+
+    scene.add(group_pere);
 
     // ---------------- RENDER SCENE ----------------
     toRender();
@@ -47,11 +69,17 @@ function start() {
 start();
 
 function toRender() {
-    baseArbre.rotation.y += rotationSpeed; // Rotation de l'arbre
+    if (!isPaused)
+        group_pere.rotation.y += rotationSpeed; // Rotation de l'arbre
 
     renderer.render(scene, camera);
     requestAnimationFrame(toRender);
+
+    // si la touc<he p est appuyée, on stope la rotation avec la variable isPaused
+    document.addEventListener("keypress", logKey);
 }
+
+
 
 
 function ajout_Arbre(x, y) {
@@ -60,51 +88,105 @@ function ajout_Arbre(x, y) {
     var texture_oak = textureLoader.load('images/oak_Log.webp');
     var texture_leaves = textureLoader.load('images/oak_leaves.webp');
 
-    const bucheGeometry = new THREE.BoxGeometry(10, 10, 10);
+    // matériaux
     const bucheMaterial = new THREE.MeshStandardMaterial({ map: texture_oak });
-
-    const geometryFeuille = new THREE.BoxGeometry(10, 10, 10);
     const materialFeuille = new THREE.MeshStandardMaterial({ map: texture_leaves });
 
     // création des mesh et ajout comme fils de la base de l'arbre
     // feuilles
     // plan 1
-    for(var l = 0; l < 2; l++) {
-        for(var i = 0; i < 3; i++) {
-            var feuille_plan1 = new THREE.Mesh(geometryFeuille, materialFeuille);
-            feuille_plan1.position.set(10-10*i + x, 10 + y, 10);
-            baseArbre.add(feuille_plan1);
+    for(var l = 0; l < 5; l++) {
+        for(var i = 0; i < 5; i++) {
+            var feuille_plan1 = new THREE.Mesh(cube_Geometry, materialFeuille);
+            feuille_plan1.position.set(10-5*i + x, 15 + y, 10+(-5*l));
+            //on ne souhaite pas afficher les 4 feuilles au angles
+            if ((i == 0 && l != 0) && (i == 0 && l != 4) || (i==1) || (i==2) || (i==3) || (i==4 && l != 0) && (i==4 && l != 4))
+                baseArbre.add(feuille_plan1);
         }
     }
 
     // plan 2
-    for(var l = 0; l < 2; l++) {
-        for(var i = 0; i < 3; i++) {
-            var feuille_plan2 = new THREE.Mesh(geometryFeuille, materialFeuille);
-            feuille_plan2.position.set(10-10*i + x, 20+10*l + y, 0);
-            baseArbre.add(feuille_plan2);
+    for(var l = 0; l < 5; l++) {
+        for(var i = 0; i < 5; i++) {
+            var feuille_plan1 = new THREE.Mesh(cube_Geometry, materialFeuille);
+            feuille_plan1.position.set(10-5*i + x, 20 + y, 10+(-5*l));
+            baseArbre.add(feuille_plan1);
         }
     }
-    var feuille2_plan2 = new THREE.Mesh(geometryFeuille, materialFeuille);
-    feuille2_plan2.position.set( 0+ x, 40 + y, 0);
-    baseArbre.add(feuille2_plan2);
-    
+
     // plan 3
-    for(var l = 0; l < 2; l++) {
+    for(var l = 0; l < 3; l++) {
         for(var i = 0; i < 3; i++) {
-            var feuille_plan3 = new THREE.Mesh(geometryFeuille, materialFeuille);
-            feuille_plan3.position.set(10-+10*i + x, 20+  10*l + y, -10);
+            var feuille_plan3 = new THREE.Mesh(cube_Geometry, materialFeuille);
+            feuille_plan3.position.set(5-5*i + x, 25 + y, 5+(-5*l));
             baseArbre.add(feuille_plan3);
         }
     }
 
     //plan 4
-
+    for(var l = 0; l < 3; l++) {
+        for(var i = 0; i < 3; i++) {
+            var feuille_plan4 = new THREE.Mesh(cube_Geometry, materialFeuille);
+            feuille_plan4.position.set(5-5*i + x, 30 + y, 5+(-5*l));
+            if ((i == 0 && l != 0) && (i == 0 && l != 2) || (i==1) || (i==2 && l != 0) && (i==2 && l != 2))
+                baseArbre.add(feuille_plan4);
+        }
+    }
 
     // buches
     for (var i = 0; i < 4; i++) {
-        var buche = new THREE.Mesh(bucheGeometry, bucheMaterial);
-        buche.position.set(0 + x, 10 * i + y, 0);
+        var buche = new THREE.Mesh(cube_Geometry, bucheMaterial);
+        buche.position.set(0 + x, 5 * i + y, 0);
         baseArbre.add(buche);
     }
+}
+
+function ajout_skyBase() {
+    // texture
+    var textureLoader = new THREE.TextureLoader();
+    var texture_Dirt = textureLoader.load('images/dirt.png');
+    var texture_Grass_Side = textureLoader.load('images/grass_block_side.png');
+    //var texture_Grass_top = textureLoader.load('images/grass_block_top.png');
+    
+    // géométrie et matériaux
+    const DirtMaterial = new THREE.MeshBasicMaterial({ map: texture_Dirt });
+    const grassMaterial = new THREE.MeshBasicMaterial({ map: texture_Grass_Side });
+
+    // création des mesh et ajout comme fils de la base de l'arbre
+    // dirt
+    // plan 1
+    for(var l = 0; l < 3; l++) {
+        for(var i = 0; i < 6; i++) {
+            var dirt = new THREE.Mesh(cube_Geometry, DirtMaterial);
+            dirt.position.set(5*i, -25, 10+(-5*l));
+            sky_base.add(dirt);
+        }
+    }
+
+    // plan 2
+    for(var l = 0; l < 3; l++) {
+        for(var i = 0; i < 6; i++) {
+            var dirt = new THREE.Mesh(cube_Geometry, DirtMaterial);
+            dirt.position.set(5*i, -20, 10+(-5*l));
+            sky_base.add(dirt);
+        }
+    }
+
+    // grass
+    // plan 1
+    for (var l = 0; i < 3; l++) {
+        for (var i = 0; i < 6; i++) {
+            var grass = new THREE.Mesh(cube_Geometry, grassMaterial);
+            grass.position.set(5*i, -15, 10+(-5*l));
+            sky_base.add(grass);
+        }
+    }
+}
+
+function ajout_ciel() {
+    const skyGeometry = new THREE.BoxGeometry(500, 500, 500);
+    const skyMaterial = new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide });
+
+    var sky = new THREE.Mesh(skyGeometry, skyMaterial);
+    scene.add(sky);
 }
